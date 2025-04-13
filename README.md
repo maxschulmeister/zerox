@@ -125,7 +125,6 @@ const result = await zerox({
   model: ModelOptions.OPENAI_GPT_4O, // Model to use (supports various models from different providers)
   modelProvider: ModelProvider.OPENAI, // Choose from OPENAI, BEDROCK, GOOGLE, AZURE, or OPENROUTER
   openaiAPIKey: "", // Convenience parameter for OpenAI API key
-  openrouterAPIKey: "", // Convenience parameter for OpenRouter API key
   outputDir: undefined, // Save combined result.md to a file
   pagesToConvertAsImages: -1, // Page numbers to convert to image as array (e.g. `[1, 2, 3]`) or a number (e.g. `1`). Set to -1 to convert all pages
   prompt: "", // LLM instructions for processing the document

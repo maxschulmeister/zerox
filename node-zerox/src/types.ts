@@ -33,6 +33,7 @@ export interface ZeroxArgs {
   model?: ModelOptions | string;
   modelProvider?: ModelProvider | string;
   openaiAPIKey?: string;
+  openrouterAPIKey?: string;
   outputDir?: string;
   pagesToConvertAsImages?: number | number[];
   prompt?: string;
@@ -72,11 +73,16 @@ export interface OpenAICredentials {
   apiKey: string;
 }
 
+export interface OpenRouterCredentials {
+  apiKey: string;
+}
+
 export type ModelCredentials =
   | AzureCredentials
   | BedrockCredentials
   | GoogleCredentials
-  | OpenAICredentials;
+  | OpenAICredentials
+  | OpenRouterCredentials;
 
 export enum ModelOptions {
   // Bedrock Claude 3 Models
@@ -97,6 +103,10 @@ export enum ModelOptions {
   GOOGLE_GEMINI_1_5_PRO = "gemini-1.5-pro",
   GOOGLE_GEMINI_2_FLASH = "gemini-2.0-flash-001",
   GOOGLE_GEMINI_2_FLASH_LITE = "gemini-2.0-flash-lite-preview-02-05",
+
+  // OpenRouter Models
+  OPENROUTER_GEMINI_2_5_PRO = "google/gemini-2.5-pro-preview-03-25",
+  OPENROUTER_LLAMA_4_SCOUT = "meta-llama/llama-4-scout",
 }
 
 export enum ModelProvider {
@@ -104,6 +114,7 @@ export enum ModelProvider {
   BEDROCK = "BEDROCK",
   GOOGLE = "GOOGLE",
   OPENAI = "OPENAI",
+  OPENROUTER = "OPENROUTER",
 }
 
 export enum OperationMode {
@@ -219,12 +230,18 @@ export interface OpenAILLMParams extends BaseLLMParams {
   maxTokens: number;
 }
 
+export interface OpenRouterLLMParams extends BaseLLMParams {
+  logprobs: boolean;
+  maxTokens: number;
+}
+
 // Union type of all provider params
 export type LLMParams =
   | AzureLLMParams
   | BedrockLLMParams
   | GoogleLLMParams
-  | OpenAILLMParams;
+  | OpenAILLMParams
+  | OpenRouterLLMParams;
 
 export interface LogprobPage {
   page: number | null;

@@ -6,7 +6,6 @@
 node_modules/
 
 # Ignore output directories
-dist/
 lib-cov/
 coverage/
 .nyc_output/

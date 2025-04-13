@@ -33,6 +33,7 @@ Zerox is available as both a Node and Python package.
 | Azure OpenAI Support      | ✓                            | ✓                          |
 | AWS Bedrock Support       | ✓                            | ✓                          |
 | Google Gemini Support     | ✓                            | ✓                          |
+| OpenRouter Support        | ✓                            | ✗                          |
 | Vertex AI Support         | ✗                            | ✓                          |
 | Data Extraction           | ✓ (`schema`)                 | ✗                          |
 | Per-page Extraction       | ✓ (`extractPerPage`)         | ✗                          |
@@ -122,7 +123,9 @@ const result = await zerox({
   maxRetries: 1, // Number of retries to attempt on a failed page, defaults to 1
   maxTesseractWorkers: -1, // Maximum number of Tesseract workers. Zerox will start with a lower number and only reach maxTesseractWorkers if needed
   model: ModelOptions.OPENAI_GPT_4O, // Model to use (supports various models from different providers)
-  modelProvider: ModelProvider.OPENAI, // Choose from OPENAI, BEDROCK, GOOGLE, or AZURE
+  modelProvider: ModelProvider.OPENAI, // Choose from OPENAI, BEDROCK, GOOGLE, AZURE, or OPENROUTER
+  openaiAPIKey: "", // Convenience parameter for OpenAI API key
+  openrouterAPIKey: "", // Convenience parameter for OpenRouter API key
   outputDir: undefined, // Save combined result.md to a file
   pagesToConvertAsImages: -1, // Page numbers to convert to image as array (e.g. `[1, 2, 3]`) or a number (e.g. `1`). Set to -1 to convert all pages
   prompt: "", // LLM instructions for processing the document
@@ -224,8 +227,14 @@ Zerox supports a wide range of models across different providers:
   - Claude 3 Opus (2024.02)
 
 - **Google Gemini**
+
   - Gemini 1.5 (Flash, Flash-8B, Pro)
   - Gemini 2.0 (Flash, Flash-Lite)
+
+- **OpenRouter**
+  - Gemini 2.5 Pro
+  - Llama 4 Scout
+  - Access to various vision models through OpenRouter's API
 
 ```ts
 import { zerox } from "zerox";
@@ -271,6 +280,16 @@ const geminiResult = await zerox({
   model: ModelOptions.GOOGLE_GEMINI_1_5_PRO,
   credentials: {
     apiKey: process.env.GEMINI_API_KEY,
+  },
+});
+
+// OpenRouter
+const openrouterResult = await zerox({
+  filePath: "path/to/file.pdf",
+  modelProvider: ModelProvider.OPENROUTER,
+  model: ModelOptions.OPENROUTER_GEMINI_2_5_PRO,
+  credentials: {
+    apiKey: process.env.OPENROUTER_API_KEY,
   },
 });
 ```
@@ -455,7 +474,7 @@ ZeroxOutput(
                     'char firstInitial;\n' +
                     'boolean isStudent;\n' +
                     '```\n\n' +
-                    'Each declaration specifies the variable’s type followed by the identifier and ending with a ' +
+                    'Each declaration specifies the variable's type followed by the identifier and ending with a ' +
                     'semicolon. The identifier rules are fairly standard: a name can consist of lowercase and ' +
                     'uppercase alphabetic characters, numbers, and underscores but may not begin with a numeric ' +
                     'character. We adopt the modern camelCasing naming convention for variables in our code. In ' +

@@ -131,7 +131,20 @@ const result = await zerox({
   schema: undefined, // Schema for structured data extraction
   tempDir: "/os/tmp", // Directory to use for temporary files (default: system temp directory)
   trimEdges: true, // True by default, trims pixels from all edges that contain values similar to the given background color, which defaults to that of the top-left pixel
+
+  // New: beforeExtraction hook
+  beforeExtraction: async ({ ocrMarkdown, extractionPrompt }) => {
+    // Example: Run RAG or inject custom context into the extraction prompt
+    const ragContext = await runRAG(ocrMarkdown); // Your custom RAG function
+    return `${ragContext}\n\n${extractionPrompt ?? ""}`;
+  },
 });
+
+// Example RAG function (replace with your own logic)
+async function runRAG(markdown) {
+  // Imagine this queries a vector DB or LLM for context
+  return `RAG Context based on OCR: ${markdown.slice(0, 100)}...`;
+}
 ```
 
 The `maintainFormat` option tries to return the markdown in a consistent format by passing the output of a prior page in as additional context for the next page. This requires the requests to run synchronously, so it's a lot slower. But valuable if your documents have a lot of tabular data, or frequently have tables that cross pages.
@@ -238,6 +251,7 @@ Zerox supports a wide range of models across different providers:
   - Gemini 2.5 Pro
   - Llama 4 Scout
   - Access to various vision models through OpenRouter's API
+  - **Note:** OpenRouter support is fully implemented in the codebase (see `src/models/openrouter.ts`). You can use your OpenRouter API key and any supported model as shown in the examples below.
 
 ```ts
 import { zerox } from "zerox";

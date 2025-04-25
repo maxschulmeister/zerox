@@ -41,6 +41,10 @@ export interface ZeroxArgs {
   schema?: Record<string, unknown>;
   tempDir?: string;
   trimEdges?: boolean;
+  beforeExtraction?: (params: {
+    ocrMarkdown: string;
+    extractionPrompt: string | undefined;
+  }) => string | undefined | void | Promise<string | undefined | void>;
 }
 
 export interface ZeroxOutput {

@@ -1,10 +1,10 @@
-import { compareKeywords } from "./utils";
-import { ModelOptions } from "../src/types";
-import { zerox } from "../src";
 import dotenv from "dotenv";
 import fs from "node:fs";
 import path from "node:path";
 import pLimit from "p-limit";
+import { zerox } from "../src";
+import { ModelOptions } from "../src/types";
+import { compareKeywords } from "./utils";
 
 dotenv.config({ path: path.join(__dirname, "../.env") });
 

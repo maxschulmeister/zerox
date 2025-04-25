@@ -75,6 +75,7 @@ export const zerox = async ({
   schema,
   tempDir = os.tmpdir(),
   trimEdges = true,
+  beforeExtraction,
 }: ZeroxArgs): Promise<ZeroxOutput> => {
   let extracted: Record<string, unknown> | null = null;
   let extractedLogprobs: LogprobPage[] = [];
@@ -87,6 +88,8 @@ export const zerox = async ({
   let pages: Page[] = [];
   let imagePaths: string[] = [];
   const startTime = new Date();
+  // Will hold the extraction prompt, possibly modified by the beforeExtraction hook
+  let newExtractionPrompt = extractionPrompt;
 
   if (openaiAPIKey && openaiAPIKey.length > 0) {
     modelProvider = ModelProvider.OPENAI;
@@ -374,6 +377,28 @@ export const zerox = async ({
       }
     }
 
+    // --- Before Extraction Hook ---
+    if (typeof beforeExtraction === "function") {
+      try {
+        const ocrMarkdown = pages
+          .map((page) => page.content || "")
+          .join("\n\n");
+        const hookResult = await beforeExtraction({
+          ocrMarkdown,
+          extractionPrompt: newExtractionPrompt,
+        });
+        if (typeof hookResult !== "undefined") {
+          newExtractionPrompt = hookResult;
+        }
+      } catch (err) {
+        throw new Error(
+          `Error in beforeExtraction hook: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
+      }
+    }
+
     // Start processing extraction using LLM
     let numSuccessfulExtractionRequests: number = 0;
     let numFailedExtractionRequests: number = 0;
@@ -406,7 +431,7 @@ export const zerox = async ({
                 {
                   input,
                   options: { correctOrientation, scheduler, trimEdges },
-                  prompt: extractionPrompt,
+                  prompt: newExtractionPrompt,
                   schema,
                 }
               );
@@ -498,7 +523,7 @@ export const zerox = async ({
                       {
                         input,
                         options: { correctOrientation, scheduler, trimEdges },
-                        prompt: extractionPrompt,
+                        prompt: newExtractionPrompt,
                         schema: fullDocSchema,
                       }
                     );

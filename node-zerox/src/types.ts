@@ -10,6 +10,7 @@ export interface ZeroxArgs {
     buffers: Buffer[];
     image: string;
     maintainFormat: boolean;
+    pageNumber: number;
     priorPage: string;
   }) => Promise<CompletionResponse>;
   directImageExtraction?: boolean;
@@ -40,6 +41,10 @@ export interface ZeroxArgs {
   schema?: Record<string, unknown>;
   tempDir?: string;
   trimEdges?: boolean;
+  beforeExtraction?: (params: {
+    ocrMarkdown: string;
+    extractionPrompt: string | undefined;
+  }) => string | undefined | void | Promise<string | undefined | void>;
 }
 
 export interface ZeroxOutput {
@@ -94,6 +99,8 @@ export enum ModelOptions {
   BEDROCK_CLAUDE_3_SONNET_2024_02 = "anthropic.claude-3-sonnet-20240229-v1:0",
 
   // OpenAI GPT-4 Models
+  OPENAI_GPT_4_1 = "gpt-4.1",
+  OPENAI_GPT_4_1_MINI = "gpt-4.1-mini",
   OPENAI_GPT_4O = "gpt-4o",
   OPENAI_GPT_4O_MINI = "gpt-4o-mini",
 

@@ -11,6 +11,8 @@ var ModelOptions;
     ModelOptions["BEDROCK_CLAUDE_3_OPUS_2024_02"] = "anthropic.claude-3-opus-20240229-v1:0";
     ModelOptions["BEDROCK_CLAUDE_3_SONNET_2024_02"] = "anthropic.claude-3-sonnet-20240229-v1:0";
     // OpenAI GPT-4 Models
+    ModelOptions["OPENAI_GPT_4_1"] = "gpt-4.1";
+    ModelOptions["OPENAI_GPT_4_1_MINI"] = "gpt-4.1-mini";
     ModelOptions["OPENAI_GPT_4O"] = "gpt-4o";
     ModelOptions["OPENAI_GPT_4O_MINI"] = "gpt-4o-mini";
     // Google Gemini Models

@@ -75,6 +75,7 @@ export const zerox = async ({
   schema,
   tempDir = os.tmpdir(),
   trimEdges = true,
+  beforeExtraction,
 }: ZeroxArgs): Promise<ZeroxOutput> => {
   let extracted: Record<string, unknown> | null = null;
   let extractedLogprobs: LogprobPage[] = [];
@@ -87,6 +88,8 @@ export const zerox = async ({
   let pages: Page[] = [];
   let imagePaths: string[] = [];
   const startTime = new Date();
+  // Will hold the extraction prompt, possibly modified by the beforeExtraction hook
+  let newExtractionPrompt = extractionPrompt;
 
   if (openaiAPIKey && openaiAPIKey.length > 0) {
     modelProvider = ModelProvider.OPENAI;
@@ -251,9 +254,23 @@ export const zerox = async ({
       if (!extractOnly) {
         const processOCR = async (
           imagePath: string,
-          pageNumber: number,
+          pageIndex: number,
           maintainFormat: boolean
         ): Promise<Page> => {
+          let pageNumber: number;
+          // If we convert all pages, just use the array index
+          if (pagesToConvertAsImages === -1) {
+            pageNumber = pageIndex + 1;
+          }
+          // Else if we convert specific pages, use the page number from the parameter
+          else if (Array.isArray(pagesToConvertAsImages)) {
+            pageNumber = pagesToConvertAsImages[pageIndex];
+          }
+          // Else, the parameter is a number and use it for the page number
+          else {
+            pageNumber = pagesToConvertAsImages;
+          }
+
           const imageBuffer = await fs.readFile(imagePath);
           const buffers = await cleanupImage({
             correctOrientation,
@@ -272,6 +289,7 @@ export const zerox = async ({
                     buffers,
                     image: imagePath,
                     maintainFormat,
+                    pageNumber,
                     priorPage,
                   }),
                 maxRetries,
@@ -338,7 +356,7 @@ export const zerox = async ({
         if (maintainFormat) {
           // Use synchronous processing
           for (let i = 0; i < imagePaths.length; i++) {
-            const page = await processOCR(imagePaths[i], i + 1, true);
+            const page = await processOCR(imagePaths[i], i, true);
             pages.push(page);
             if (page.status === PageStatus.ERROR) {
               break;
@@ -349,13 +367,35 @@ export const zerox = async ({
           await Promise.all(
             imagePaths.map((imagePath, i) =>
               limit(() =>
-                processOCR(imagePath, i + 1, false).then((page) => {
+                processOCR(imagePath, i, false).then((page) => {
                   pages[i] = page;
                 })
               )
             )
           );
         }
+      }
+    }
+
+    // --- Before Extraction Hook ---
+    if (typeof beforeExtraction === "function") {
+      try {
+        const ocrMarkdown = pages
+          .map((page) => page.content || "")
+          .join("\n\n");
+        const hookResult = await beforeExtraction({
+          ocrMarkdown,
+          extractionPrompt: newExtractionPrompt,
+        });
+        if (typeof hookResult !== "undefined") {
+          newExtractionPrompt = hookResult;
+        }
+      } catch (err) {
+        throw new Error(
+          `Error in beforeExtraction hook: ${
+            err instanceof Error ? err.message : String(err)
+          }`
+        );
       }
     }
 
@@ -391,7 +431,7 @@ export const zerox = async ({
                 {
                   input,
                   options: { correctOrientation, scheduler, trimEdges },
-                  prompt: extractionPrompt,
+                  prompt: newExtractionPrompt,
                   schema,
                 }
               );
@@ -483,7 +523,7 @@ export const zerox = async ({
                       {
                         input,
                         options: { correctOrientation, scheduler, trimEdges },
-                        prompt: extractionPrompt,
+                        prompt: newExtractionPrompt,
                         schema: fullDocSchema,
                       }
                     );
@@ -555,30 +595,6 @@ export const zerox = async ({
     const endTime = new Date();
     const completionTime = endTime.getTime() - startTime.getTime();
 
-    const formattedPages = pages.map((page, i) => {
-      let correctPageNumber;
-      // If we convert all pages, just use the array index
-      if (pagesToConvertAsImages === -1) {
-        correctPageNumber = i + 1;
-      }
-      // Else if we convert specific pages, use the page number from the parameter
-      else if (Array.isArray(pagesToConvertAsImages)) {
-        correctPageNumber = pagesToConvertAsImages[i];
-      }
-      // Else, the parameter is a number and use it for the page number
-      else {
-        correctPageNumber = pagesToConvertAsImages;
-      }
-
-      // Return the page with the correct page number
-      const result: Page = {
-        ...page,
-        page: correctPageNumber,
-      };
-
-      return result;
-    });
-
     return {
       completionTime,
       extracted,
@@ -593,7 +609,7 @@ export const zerox = async ({
           }
         : {}),
       outputTokens: outputTokenCount,
-      pages: formattedPages,
+      pages,
       summary: {
         totalPages: pages.length,
         ocr: !extractOnly

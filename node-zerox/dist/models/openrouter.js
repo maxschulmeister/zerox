@@ -64,6 +64,7 @@ var fs_extra_1 = __importDefault(require("fs-extra"));
 var constants_1 = require("../constants");
 var types_1 = require("../types");
 var utils_1 = require("../utils");
+var schema_1 = require("../utils/schema");
 var OpenRouterModel = /** @class */ (function () {
     function OpenRouterModel(credentials, model, llmParams) {
         this.apiKey = credentials.apiKey;
@@ -210,7 +211,7 @@ var OpenRouterModel = /** @class */ (function () {
     };
     OpenRouterModel.prototype.handleExtraction = function (_a) {
         return __awaiter(this, arguments, void 0, function (_b) {
-            var messages, _c, _d, response, data, result, err_2;
+            var messages, _c, _d, isOpenAI, isGoogle, newSchema, response, data, result, err_2;
             var _e;
             var _f, _g, _h;
             var input = _b.input, options = _b.options, prompt = _b.prompt, schema = _b.schema;
@@ -230,9 +231,20 @@ var OpenRouterModel = /** @class */ (function () {
                     case 1:
                         _d.apply(_c, [(_e.content = _j.sent(),
                                 _e)]);
+                        isOpenAI = this.model.includes("openai");
+                        isGoogle = this.model.includes("google");
+                        newSchema = isOpenAI
+                            ? (0, schema_1.jsonSchemaToOpenAISchema)(schema)
+                            : isGoogle
+                                ? (0, schema_1.jsonSchemaToGoogleSchema)(schema)
+                                : schema;
                         return [4 /*yield*/, axios_1.default.post("https://openrouter.ai/api/v1/chat/completions", __assign({ messages: messages, model: this.model, response_format: {
-                                    json_schema: { name: "extraction", schema: schema },
                                     type: "json_schema",
+                                    json_schema: {
+                                        name: "extraction",
+                                        strict: isOpenAI,
+                                        schema: newSchema,
+                                    },
                                 } }, (0, utils_1.convertKeysToSnakeCase)((_f = this.llmParams) !== null && _f !== void 0 ? _f : null)), {
                                 headers: {
                                     Authorization: "Bearer ".concat(this.apiKey),

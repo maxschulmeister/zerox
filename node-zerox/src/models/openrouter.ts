@@ -18,6 +18,10 @@ import {
   convertKeysToSnakeCase,
   encodeImageToBase64,
 } from "../utils";
+import {
+  jsonSchemaToGoogleSchema,
+  jsonSchemaToOpenAISchema,
+} from "../utils/schema";
 
 export default class OpenRouterModel implements ModelInterface {
   private apiKey: string;
@@ -174,14 +178,27 @@ export default class OpenRouterModel implements ModelInterface {
         content: await this.createMessageContent({ input, options }),
       });
 
+      const isOpenAI = this.model.includes("openai");
+      const isGoogle = this.model.includes("google");
+
+      const newSchema = isOpenAI
+        ? jsonSchemaToOpenAISchema(schema)
+        : isGoogle
+        ? jsonSchemaToGoogleSchema(schema)
+        : schema;
+
       const response = await axios.post(
         "https://openrouter.ai/api/v1/chat/completions",
         {
           messages,
           model: this.model,
           response_format: {
-            json_schema: { name: "extraction", schema },
             type: "json_schema",
+            json_schema: {
+              name: "extraction",
+              strict: isOpenAI,
+              schema: newSchema,
+            },
           },
           ...convertKeysToSnakeCase(this.llmParams ?? null),
         },

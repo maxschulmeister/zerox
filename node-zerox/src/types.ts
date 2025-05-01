@@ -1,6 +1,11 @@
 import { ChatCompletionTokenLogprob } from "openai/resources";
 import Tesseract from "tesseract.js";
 
+export type BeforeExtractionResult = {
+  ocrMarkdown?: string;
+  extractionPrompt?: string;
+};
+
 export interface ZeroxArgs {
   cleanup?: boolean;
   concurrency?: number;
@@ -44,7 +49,11 @@ export interface ZeroxArgs {
   beforeExtraction?: (params: {
     ocrMarkdown: string;
     extractionPrompt: string | undefined;
-  }) => string | undefined | void | Promise<string | undefined | void>;
+  }) =>
+    | BeforeExtractionResult
+    | undefined
+    | void
+    | Promise<BeforeExtractionResult | undefined | void>;
 }
 
 export interface ZeroxOutput {

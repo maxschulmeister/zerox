@@ -378,17 +378,20 @@ export const zerox = async ({
     }
 
     // --- Before Extraction Hook ---
+    let ocrMarkdown = pages.map((page) => page.content || "").join("\n\n");
     if (typeof beforeExtraction === "function") {
       try {
-        const ocrMarkdown = pages
-          .map((page) => page.content || "")
-          .join("\n\n");
         const hookResult = await beforeExtraction({
           ocrMarkdown,
           extractionPrompt: newExtractionPrompt,
         });
-        if (typeof hookResult !== "undefined") {
-          newExtractionPrompt = hookResult;
+        if (hookResult && typeof hookResult === "object") {
+          if (typeof hookResult.ocrMarkdown === "string") {
+            ocrMarkdown = hookResult.ocrMarkdown;
+          }
+          if (typeof hookResult.extractionPrompt === "string") {
+            newExtractionPrompt = hookResult.extractionPrompt;
+          }
         }
       } catch (err) {
         throw new Error(
@@ -483,7 +486,7 @@ export const zerox = async ({
                 imagePaths: [imagePath],
                 text: pages[index].content || "",
               }))
-            : pages.map((page) => page.content || "");
+            : ocrMarkdown.split("\n\n");
 
         extractionTasks.push(
           ...inputs.map((input, i) =>
@@ -505,11 +508,7 @@ export const zerox = async ({
                   )
                   .join(""),
               }
-            : pages
-                .map((page, i) =>
-                  i === 0 ? page.content : "\n<hr><hr>\n" + page.content
-                )
-                .join("");
+            : ocrMarkdown;
 
         extractionTasks.push(
           (async () => {

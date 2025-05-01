@@ -365,21 +365,24 @@ var zerox = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b)
                 _z.sent();
                 _z.label = 29;
             case 29:
+                ocrMarkdown = pages.map(function (page) { return page.content || ""; }).join("\n\n");
                 if (!(typeof beforeExtraction === "function")) return [3 /*break*/, 33];
                 _z.label = 30;
             case 30:
                 _z.trys.push([30, 32, , 33]);
-                ocrMarkdown = pages
-                    .map(function (page) { return page.content || ""; })
-                    .join("\n\n");
                 return [4 /*yield*/, beforeExtraction({
                         ocrMarkdown: ocrMarkdown,
                         extractionPrompt: newExtractionPrompt,
                     })];
             case 31:
                 hookResult = _z.sent();
-                if (typeof hookResult !== "undefined") {
-                    newExtractionPrompt = hookResult;
+                if (hookResult && typeof hookResult === "object") {
+                    if (typeof hookResult.ocrMarkdown === "string") {
+                        ocrMarkdown = hookResult.ocrMarkdown;
+                    }
+                    if (typeof hookResult.extractionPrompt === "string") {
+                        newExtractionPrompt = hookResult.extractionPrompt;
+                    }
                 }
                 return [3 /*break*/, 33];
             case 32:
@@ -462,7 +465,7 @@ var zerox = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b)
                                 imagePaths: [imagePath],
                                 text: pages[index].content || "",
                             }); })
-                            : pages.map(function (page) { return page.content || ""; });
+                            : ocrMarkdown.split("\n\n");
                     extractionTasks.push.apply(extractionTasks, inputs.map(function (input, i) {
                         return processExtraction_1(input, i + 1, perPageSchema_1);
                     }));
@@ -479,11 +482,7 @@ var zerox = function (_a) { return __awaiter(void 0, [_a], void 0, function (_b)
                                 })
                                     .join(""),
                             }
-                            : pages
-                                .map(function (page, i) {
-                                return i === 0 ? page.content : "\n<hr><hr>\n" + page.content;
-                            })
-                                .join("");
+                            : ocrMarkdown;
                     extractionTasks.push((function () { return __awaiter(void 0, void 0, void 0, function () {
                         var result, error_3;
                         return __generator(this, function (_a) {

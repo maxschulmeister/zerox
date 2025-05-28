@@ -1,10 +1,25 @@
 import fs from "fs-extra";
 import os from "os";
-import path from "path";
 import pLimit from "p-limit";
+import path from "path";
 import Tesseract from "tesseract.js";
 
+import { NUM_STARTING_WORKERS } from "./constants";
 import "./handleWarnings";
+import { createModel } from "./models";
+import {
+  CompletionResponse,
+  ErrorMode,
+  ExtractionResponse,
+  HybridInput,
+  LogprobPage,
+  ModelProvider,
+  OperationMode,
+  Page,
+  PageStatus,
+  ZeroxArgs,
+  ZeroxOutput,
+} from "./types";
 import {
   addWorkersToTesseractScheduler,
   checkIsCFBFile,
@@ -26,22 +41,6 @@ import {
   splitSchema,
   terminateScheduler,
 } from "./utils";
-import { createModel } from "./models";
-import {
-  CompletionResponse,
-  ErrorMode,
-  ExtractionResponse,
-  HybridInput,
-  LogprobPage,
-  ModelOptions,
-  ModelProvider,
-  OperationMode,
-  Page,
-  PageStatus,
-  ZeroxArgs,
-  ZeroxOutput,
-} from "./types";
-import { NUM_STARTING_WORKERS } from "./constants";
 
 export const zerox = async ({
   cleanup = true,
@@ -68,7 +67,7 @@ export const zerox = async ({
   maxImageSize = 15,
   maxRetries = 1,
   maxTesseractWorkers = -1,
-  model = ModelOptions.OPENAI_GPT_4O,
+  model = "gpt-4o",
   modelProvider = ModelProvider.OPENAI,
   openaiAPIKey = "",
   outputDir,

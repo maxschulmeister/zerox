@@ -6,6 +6,7 @@ import {
   OperationMode,
   ProcessedCompletionResponse,
   ProcessedExtractionResponse,
+  UnifiedLLMParams,
 } from "../types";
 import { formatMarkdown } from "./common";
 
@@ -58,46 +59,22 @@ export class CompletionProcessor {
   }
 }
 
-const providerDefaultParams: Record<ModelProvider | string, LLMParams> = {
-  [ModelProvider.AZURE]: {
-    frequencyPenalty: 0,
-    logprobs: false,
-    maxTokens: 4000,
-    presencePenalty: 0,
-    temperature: 0,
-    topP: 1,
-  },
-  [ModelProvider.BEDROCK]: {
-    maxTokens: 4000,
-    temperature: 0,
-    topP: 1,
-  },
-  [ModelProvider.GOOGLE]: {
-    frequencyPenalty: 0,
-    maxOutputTokens: 4000,
-    presencePenalty: 0,
-    temperature: 0,
-    topP: 1,
-  },
-  [ModelProvider.OPENAI]: {
-    frequencyPenalty: 0,
-    logprobs: false,
-    maxTokens: 4000,
-    presencePenalty: 0,
-    temperature: 0,
-    topP: 1,
-  },
+// Default LLM parameters that apply to all providers
+export const defaultLLMParams: UnifiedLLMParams = {
+  frequencyPenalty: 0,
+  logprobs: false,
+  maxTokens: 4000,
+  presencePenalty: 0,
+  temperature: 0,
+  topP: 1,
 };
 
 export const validateLLMParams = <T extends LLMParams>(
   params: Partial<T>,
   provider: ModelProvider | string
 ): LLMParams => {
-  const defaultParams = providerDefaultParams[provider];
-
-  if (!defaultParams) {
-    throw new Error(`Unsupported model provider: ${provider}`);
-  }
+  // Use the same default for all providers
+  const defaultParams = defaultLLMParams;
 
   const validKeys = new Set(Object.keys(defaultParams));
   for (const [key, value] of Object.entries(params)) {
@@ -109,11 +86,11 @@ export const validateLLMParams = <T extends LLMParams>(
       );
     }
 
-    const expectedType = typeof defaultParams[key as keyof LLMParams];
+    const expectedType = typeof defaultParams[key as keyof UnifiedLLMParams];
     if (typeof value !== expectedType) {
       throw new Error(`Value for '${key}' must be a ${expectedType}`);
     }
   }
 
-  return { ...defaultParams, ...params };
+  return { ...defaultParams, ...params } as LLMParams;
 };

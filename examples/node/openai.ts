@@ -1,5 +1,5 @@
-import { ModelOptions, ModelProvider } from "zerox/node-zerox/dist/types";
 import { zerox } from "zerox";
+import { ModelOptions, ModelProvider } from "zerox/node-zerox/dist/types";
 
 /**
  * Example using OpenAI with Zerox to extract structured data from documents.

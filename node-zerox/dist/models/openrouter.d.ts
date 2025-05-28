@@ -3,6 +3,7 @@ export default class OpenRouterModel implements ModelInterface {
     private apiKey;
     private model;
     private llmParams?;
+    private client;
     constructor(credentials: OpenRouterCredentials, model: string, llmParams?: Partial<OpenRouterLLMParams>);
     getCompletion(mode: OperationMode, params: CompletionArgs | ExtractionArgs): Promise<CompletionResponse | ExtractionResponse>;
     private createMessageContent;

@@ -61,6 +61,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 var axios_1 = __importDefault(require("axios"));
 var fs_extra_1 = __importDefault(require("fs-extra"));
+var openai_1 = __importDefault(require("openai"));
 var constants_1 = require("../constants");
 var types_1 = require("../types");
 var utils_1 = require("../utils");
@@ -70,6 +71,18 @@ var OpenRouterModel = /** @class */ (function () {
         this.apiKey = credentials.apiKey;
         this.model = model;
         this.llmParams = llmParams;
+        var apiKey = process.env.OPENROUTER_API_KEY;
+        if (!apiKey) {
+            throw new Error("Missing required OpenRouter API key");
+        }
+        this.client = new openai_1.default({
+            baseURL: "https://openrouter.ai/api/v1",
+            apiKey: apiKey,
+            defaultHeaders: {
+                "HTTP-Referer": process.env.SITE_URL || "https://github.com/omni-ai/benchmark",
+                "X-Title": "OmniAI OCR Benchmark",
+            },
+        });
     }
     OpenRouterModel.prototype.getCompletion = function (mode, params) {
         return __awaiter(this, void 0, void 0, function () {
@@ -211,7 +224,7 @@ var OpenRouterModel = /** @class */ (function () {
     };
     OpenRouterModel.prototype.handleExtraction = function (_a) {
         return __awaiter(this, arguments, void 0, function (_b) {
-            var messages, _c, _d, isOpenAI, isGoogle, newSchema, response, data, result, err_2;
+            var messages, _c, _d, isOpenAI, isGoogle, isDeepseek, newSchema, response, data, result, err_2;
             var _e;
             var _f, _g, _h;
             var input = _b.input, options = _b.options, prompt = _b.prompt, schema = _b.schema;
@@ -233,6 +246,7 @@ var OpenRouterModel = /** @class */ (function () {
                                 _e)]);
                         isOpenAI = this.model.includes("openai");
                         isGoogle = this.model.includes("google");
+                        isDeepseek = this.model.includes("deepseek");
                         newSchema = isOpenAI
                             ? (0, schema_1.jsonSchemaToOpenAISchema)(schema)
                             : isGoogle
@@ -245,7 +259,11 @@ var OpenRouterModel = /** @class */ (function () {
                                         strict: isOpenAI,
                                         schema: newSchema,
                                     },
-                                } }, (0, utils_1.convertKeysToSnakeCase)((_f = this.llmParams) !== null && _f !== void 0 ? _f : null)), {
+                                }, provider: this.model.includes("qwen3-235b-a22b")
+                                    ? {
+                                        ignore: ["Fireworks"],
+                                    }
+                                    : {} }, (0, utils_1.convertKeysToSnakeCase)((_f = this.llmParams) !== null && _f !== void 0 ? _f : null)), {
                                 headers: {
                                     Authorization: "Bearer ".concat(this.apiKey),
                                     "Content-Type": "application/json",

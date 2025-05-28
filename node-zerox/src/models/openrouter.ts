@@ -1,5 +1,6 @@
 import axios from "axios";
 import fs from "fs-extra";
+import OpenAI from "openai";
 import { CONSISTENCY_PROMPT, SYSTEM_PROMPT_BASE } from "../constants";
 import {
   CompletionArgs,
@@ -22,11 +23,11 @@ import {
   jsonSchemaToGoogleSchema,
   jsonSchemaToOpenAISchema,
 } from "../utils/schema";
-
 export default class OpenRouterModel implements ModelInterface {
   private apiKey: string;
   private model: string;
   private llmParams?: Partial<OpenRouterLLMParams>;
+  private client: OpenAI;
 
   constructor(
     credentials: OpenRouterCredentials,
@@ -36,6 +37,21 @@ export default class OpenRouterModel implements ModelInterface {
     this.apiKey = credentials.apiKey;
     this.model = model;
     this.llmParams = llmParams;
+
+    const apiKey = process.env.OPENROUTER_API_KEY;
+    if (!apiKey) {
+      throw new Error("Missing required OpenRouter API key");
+    }
+
+    this.client = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey,
+      defaultHeaders: {
+        "HTTP-Referer":
+          process.env.SITE_URL || "https://github.com/omni-ai/benchmark",
+        "X-Title": "OmniAI OCR Benchmark",
+      },
+    });
   }
 
   async getCompletion(
@@ -180,7 +196,7 @@ export default class OpenRouterModel implements ModelInterface {
 
       const isOpenAI = this.model.includes("openai");
       const isGoogle = this.model.includes("google");
-
+      const isDeepseek = this.model.includes("deepseek");
       const newSchema = isOpenAI
         ? jsonSchemaToOpenAISchema(schema)
         : isGoogle
@@ -200,6 +216,11 @@ export default class OpenRouterModel implements ModelInterface {
               schema: newSchema,
             },
           },
+          provider: this.model.includes("qwen3-235b-a22b")
+            ? {
+                ignore: ["Fireworks"],
+              }
+            : {},
           ...convertKeysToSnakeCase(this.llmParams ?? null),
         },
         {

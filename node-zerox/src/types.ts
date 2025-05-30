@@ -5,7 +5,7 @@ export interface ZeroxArgs {
   cleanup?: boolean;
   concurrency?: number;
   correctOrientation?: boolean;
-  credentials?: ModelCredentials;
+  credentials?: unknown;
   customModelFunction?: (params: {
     buffers: Buffer[];
     image: string;
@@ -16,10 +16,10 @@ export interface ZeroxArgs {
   directImageExtraction?: boolean;
   enableHybridExtraction?: boolean;
   errorMode?: ErrorMode;
-  extractionCredentials?: ModelCredentials;
+  extractionCredentials?: unknown;
   extractionLlmParams?: Partial<LLMParams>;
   extractionModel?: Model;
-  extractionModelProvider?: ModelProvider | string;
+  extractionModelProvider?: ModelProviderType;
   extractionPrompt?: string;
   extractOnly?: boolean;
   extractPerPage?: string[];
@@ -33,7 +33,7 @@ export interface ZeroxArgs {
   maxRetries?: number;
   maxTesseractWorkers?: number;
   model?: Model;
-  modelProvider?: ModelProvider | string;
+  modelProvider?: ModelProviderType;
   openaiAPIKey?: string;
   outputDir?: string;
   pagesToConvertAsImages?: number | number[];
@@ -56,7 +56,9 @@ export interface ZeroxOutput {
 
 export interface AzureCredentials {
   apiKey: string;
-  endpoint: string;
+  resourceName?: string;
+  apiVersion?: string;
+  baseURL?: string;
 }
 
 export interface BedrockCredentials {
@@ -109,6 +111,22 @@ export type Model =
   | "gemini-2.0-flash-lite-preview-02-05"
   // Allow any other string
   | (string & {});
+
+// Type for any provider creation function - flexible enough for AI SDK providers
+export type ProviderFunction = (options?: any) => {
+  languageModel: (modelId: string) => LanguageModelV1;
+};
+
+// Type for provider instances (the result of calling a provider creation function)
+export type ProviderInstance = {
+  languageModel: (modelId: string) => LanguageModelV1;
+};
+
+// Update the provider type to accept enum, provider function, or provider instance
+export type ModelProviderType =
+  | ModelProvider
+  | ProviderFunction
+  | ProviderInstance;
 
 export enum ModelProvider {
   AZURE = "AZURE",
@@ -170,19 +188,10 @@ export type ProcessedCompletionResponse = Omit<
 };
 
 export interface CreateModelArgs {
-  credentials: ModelCredentials;
+  credentials: unknown;
   llmParams: Partial<LLMParams>;
   model: Model;
-  provider: ModelProvider | string;
-}
-
-// New AI SDK compatible model args
-export interface AISDKModelArgs {
-  credentials: AISDKCredentials;
-  llmParams: Partial<UnifiedLLMParams>;
-  model: Model;
-  provider: ModelProvider | string;
-  aiModel?: AIModel; // Direct AI SDK model instance
+  provider: ModelProviderType;
 }
 
 export enum ErrorMode {
@@ -297,15 +306,7 @@ export interface ExcelSheetContent {
   sheetName: string;
 }
 
-// AI SDK compatibility types
-export interface AISDKCredentials {
-  apiKey: string;
-  endpoint?: string; // For Azure
-  region?: string; // For Bedrock
-  accessKeyId?: string; // For Bedrock
-  secretAccessKey?: string; // For Bedrock
-  sessionToken?: string; // For Bedrock
-}
+// AI SDK compatibility types - removed AISDKCredentials as it's no longer needed
 
 // Unified LLM parameters for AI SDK
 export interface UnifiedLLMParams {

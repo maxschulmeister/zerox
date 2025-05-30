@@ -46,7 +46,7 @@ export const zerox = async ({
   cleanup = true,
   concurrency = 10,
   correctOrientation = true,
-  credentials = { apiKey: "" },
+  credentials,
   customModelFunction,
   directImageExtraction = false,
   enableHybridExtraction = false,
@@ -100,9 +100,6 @@ export const zerox = async ({
   extractionModelProvider = extractionModelProvider ?? modelProvider;
 
   // Validators
-  if (Object.values(credentials).every((credential) => !credential)) {
-    throw new Error("Missing credentials");
-  }
   if (!filePath || !filePath.length) {
     throw new Error("Missing file path");
   }

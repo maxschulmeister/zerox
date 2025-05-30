@@ -1,5 +1,12 @@
-import { CoreMessage, generateObject, generateText, UserContent } from "ai";
+import {
+  CoreMessage,
+  generateObject,
+  generateText,
+  jsonSchema,
+  UserContent,
+} from "ai";
 import fs from "fs-extra";
+import { z } from "zod/v4";
 import { CONSISTENCY_PROMPT, SYSTEM_PROMPT_BASE } from "../constants";
 import {
   AIModel,
@@ -11,10 +18,8 @@ import {
   ModelInterface,
   ModelProvider,
   OperationMode,
-  UnifiedLLMParams,
 } from "../types";
 import { cleanupImage, encodeImageToBase64 } from "../utils";
-import { validateLLMParams } from "../utils/model";
 
 /**
  * Unified AI SDK model implementation that supports multiple providers
@@ -27,7 +32,7 @@ export default class AISDKModel implements ModelInterface {
   private aiModel: AIModel;
   private provider: ModelProvider | string;
   private modelName: string;
-  private llmParams: UnifiedLLMParams;
+  private llmParams: any;
 
   /**
    * Creates a new AISDKModel instance
@@ -40,7 +45,7 @@ export default class AISDKModel implements ModelInterface {
     aiModel: AIModel,
     provider: ModelProvider | string,
     modelName: string,
-    llmParams?: Partial<UnifiedLLMParams>
+    llmParams?: any
   ) {
     // Input validation
     if (!aiModel) {
@@ -56,24 +61,7 @@ export default class AISDKModel implements ModelInterface {
     this.aiModel = aiModel;
     this.provider = provider;
     this.modelName = modelName;
-    // Validate and merge with defaults using nullish coalescing
-    this.llmParams = validateLLMParams(
-      llmParams ?? {},
-      provider
-    ) as UnifiedLLMParams;
-  }
-
-  /**
-   * Extract common LLM parameters to avoid duplication
-   */
-  private getLLMParams() {
-    return {
-      maxTokens: this.llmParams.maxTokens,
-      temperature: this.llmParams.temperature,
-      topP: this.llmParams.topP,
-      frequencyPenalty: this.llmParams.frequencyPenalty,
-      presencePenalty: this.llmParams.presencePenalty,
-    };
+    this.llmParams = llmParams || {};
   }
 
   /**
@@ -176,7 +164,7 @@ export default class AISDKModel implements ModelInterface {
       const result = await generateText({
         model: this.aiModel,
         messages,
-        ...this.getLLMParams(),
+        ...this.llmParams,
       });
 
       return {
@@ -208,11 +196,13 @@ export default class AISDKModel implements ModelInterface {
         content,
       });
 
+      const isZodSchema = schema instanceof z.ZodType;
+
       const result = await generateObject({
         model: this.aiModel,
         messages,
-        schema: schema as any,
-        ...this.getLLMParams(),
+        schema: isZodSchema ? schema : (jsonSchema(schema) as any),
+        ...this.llmParams,
       });
 
       return {
